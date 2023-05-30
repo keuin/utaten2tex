@@ -117,7 +117,7 @@ class LatexGenerator:
     def __init__(self):
         pass
 
-    def generate_lyric(self, lyric_tokens: typing.Iterator[Token], title) -> str:
+    def generate_lyric(self, lyric_tokens: typing.Iterator[Token], artist=None, title=None) -> str:
         injectors = []
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{pxrubrica}'], []))
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{setspace}', r'\doublespacing'], []))
@@ -130,11 +130,15 @@ class LatexGenerator:
             r'\setCJKsansfont{Noto Sans CJK TC}',
             r'\setCJKmonofont{Noto Sans Mono CJK TC}',
         ], []))
+        injectors.append(LatexDocInjectionInfo([], [
+            r'\author{%s}' % (artist or ''),
+            r'\title{%s}' % (title or ''),
+            r'\date{}',
+        ], []))
         injectors.append(LatexDocInjectionInfo([], [r'\begin{document}'], [r'\end{document}']))
+        injectors.append(LatexDocInjectionInfo([], [r'\maketitle'], []))
         if self.centering:
             injectors.append(LatexDocInjectionInfo([], [r'\begin{center}'], [r'\end{center}']))
-        if title:
-            injectors.append(LatexDocInjectionInfo([], [r'\section*{%s}' % title], []))
         injectors.append(self.cjk.value)
 
         def _inject(injectors, getter) -> str:
@@ -179,8 +183,8 @@ def main():
     gen = LatexGenerator()
     gen.centering = True
     gen.cjk = CJKProvider.xeCJK
-    title = ''
-    artist = ''
+    title = None
+    artist = None
     for s in p.select('script'):
         if not s.string or 'cf_page_artist' not in s.string:
             continue
@@ -190,7 +194,7 @@ def main():
                 artist = v
             elif k == 'page_song':
                 title = v
-    print(gen.generate_lyric(tokens, f'{title} - {artist}' if title and artist else None))
+    print(gen.generate_lyric(tokens, artist, title))
 
 
 if __name__ == '__main__':
