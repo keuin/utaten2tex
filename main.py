@@ -1,3 +1,4 @@
+import re
 import sys
 import abc
 import dataclasses
@@ -94,7 +95,7 @@ class LatexGenerator:
     def __init__(self):
         pass
 
-    def generate_lyric(self, lyric_tokens: typing.Iterator[Token]) -> str:
+    def generate_lyric(self, lyric_tokens: typing.Iterator[Token], title) -> str:
         injectors = []
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{pxrubrica}'], []))
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{setspace}', r'\doublespacing'], []))
@@ -106,6 +107,8 @@ class LatexGenerator:
         injectors.append(LatexDocInjectionInfo([], [r'\begin{document}'], [r'\end{document}']))
         if self.centering:
             injectors.append(LatexDocInjectionInfo([], [r'\begin{center}'], [r'\end{center}']))
+        if title:
+            injectors.append(LatexDocInjectionInfo([], [r'\section*{%s}' % title], []))
         injectors.append(self.cjk.value)
 
         def _inject(injectors, getter) -> str:
@@ -149,7 +152,18 @@ def main():
     gen = LatexGenerator()
     gen.centering = True
     gen.cjk = CJKProvider.xeCJK
-    print(gen.generate_lyric(tokens))
+    title = ''
+    artist = ''
+    for s in p.select('script'):
+        if not s.string or 'cf_page_artist' not in s.string:
+            continue
+        entries = re.findall(r'cf_(.+) = "(.+)"', s.string)
+        for k, v in entries:
+            if k == 'page_artist':
+                artist = v
+            elif k == 'page_song':
+                title = v
+    print(gen.generate_lyric(tokens, f'{title} - {artist}' if title and artist else None))
 
 
 if __name__ == '__main__':
