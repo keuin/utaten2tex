@@ -50,6 +50,28 @@ class NewLineToken(Token):
         return '\n\n'
 
 
+class SectionBreaker(Token):
+
+    def __init__(self):
+        pass
+
+    def to_latex(self) -> str:
+        return r'\section*{}'
+
+
+def optimize_typography(tokens: typing.Iterator[Token]) -> typing.Iterator[Token]:
+    prev = next(tokens)
+    for t in tokens:
+        if all([isinstance(x, NewLineToken) for x in (prev, t)]):
+            yield NewLineToken()
+            yield SectionBreaker()
+        else:
+            yield prev
+            prev = t
+    if prev:
+        yield prev
+
+
 @dataclasses.dataclass
 class LatexDocInjectionInfo:
     packages: list[str]
@@ -100,6 +122,10 @@ class LatexGenerator:
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{pxrubrica}'], []))
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{setspace}', r'\doublespacing'], []))
         injectors.append(LatexDocInjectionInfo([], [
+            r'\usepackage{geometry}',
+            r'\geometry{a4paper,left=20mm,right=20mm,top=10mm,bottom=20mm}',
+        ], []))
+        injectors.append(LatexDocInjectionInfo([], [
             r'\setCJKmainfont{Noto Serif CJK TC}',
             r'\setCJKsansfont{Noto Sans CJK TC}',
             r'\setCJKmonofont{Noto Sans Mono CJK TC}',
@@ -149,6 +175,7 @@ def main():
     p = BeautifulSoup(html, "html5lib")
     lyric = p.select_one('.hiragana')
     tokens = tokenize(lyric)
+    tokens = optimize_typography(tokens)
     gen = LatexGenerator()
     gen.centering = True
     gen.cjk = CJKProvider.xeCJK
