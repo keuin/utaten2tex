@@ -115,9 +115,13 @@ class LatexGenerator:
     cjk: CJKProvider
     artist: typing.Optional[str]
     title: typing.Optional[str]
+    cjk_font_main: typing.Optional[str]
+    cjk_font_sans: typing.Optional[str]
+    cjk_font_mono: typing.Optional[str]
 
     def __init__(self):
         self.artist, self.title = None, None
+        self.cjk_font_main, self.cjk_font_sans, self.cjk_font_mono = None, None, None
 
     def generate_lyric(self, lyric_tokens: typing.Iterator[Token]) -> str:
         injectors = []
@@ -127,11 +131,11 @@ class LatexGenerator:
             r'\usepackage{geometry}',
             r'\geometry{a4paper,left=20mm,right=20mm,top=10mm,bottom=20mm}',
         ], []))
-        injectors.append(LatexDocInjectionInfo([], [
-            r'\setCJKmainfont{Noto Serif CJK TC}',
-            r'\setCJKsansfont{Noto Sans CJK TC}',
-            r'\setCJKmonofont{Noto Sans Mono CJK TC}',
-        ], []))
+        injectors.append(LatexDocInjectionInfo([], [x for x in [
+            r'\setCJKmainfont{%s}' % self.cjk_font_main if self.cjk_font_main else None,
+            r'\setCJKsansfont{%s}' % self.cjk_font_sans if self.cjk_font_sans else None,
+            r'\setCJKmonofont{%s}' % self.cjk_font_mono if self.cjk_font_mono else None,
+        ] if x], []))
         injectors.append(LatexDocInjectionInfo([], [
             r'\author{%s}' % (self.artist or ''),
             r'\title{%s}' % (self.title or ''),
@@ -197,6 +201,8 @@ def main():
             elif k == 'page_song':
                 title = v
     gen.artist, gen.title = artist, title
+    # FIXME hardcoded CJK font
+    gen.cjk_font_main = 'Noto Serif CJK JP'
     print(gen.generate_lyric(tokens))
 
 
