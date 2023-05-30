@@ -113,11 +113,13 @@ def tokenize(lyric: Tag) -> typing.Iterator[Token]:
 class LatexGenerator:
     centering: bool
     cjk: CJKProvider
+    artist: typing.Optional[str]
+    title: typing.Optional[str]
 
     def __init__(self):
-        pass
+        self.artist, self.title = None, None
 
-    def generate_lyric(self, lyric_tokens: typing.Iterator[Token], artist=None, title=None) -> str:
+    def generate_lyric(self, lyric_tokens: typing.Iterator[Token]) -> str:
         injectors = []
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{pxrubrica}'], []))
         injectors.append(LatexDocInjectionInfo([], [r'\usepackage{setspace}', r'\doublespacing'], []))
@@ -131,8 +133,8 @@ class LatexGenerator:
             r'\setCJKmonofont{Noto Sans Mono CJK TC}',
         ], []))
         injectors.append(LatexDocInjectionInfo([], [
-            r'\author{%s}' % (artist or ''),
-            r'\title{%s}' % (title or ''),
+            r'\author{%s}' % (self.artist or ''),
+            r'\title{%s}' % (self.title or ''),
             r'\date{}',
         ], []))
         injectors.append(LatexDocInjectionInfo([], [r'\begin{document}'], [r'\end{document}']))
@@ -194,7 +196,8 @@ def main():
                 artist = v
             elif k == 'page_song':
                 title = v
-    print(gen.generate_lyric(tokens, artist, title))
+    gen.artist, gen.title = artist, title
+    print(gen.generate_lyric(tokens))
 
 
 if __name__ == '__main__':
