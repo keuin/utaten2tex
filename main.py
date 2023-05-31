@@ -5,6 +5,7 @@ import dataclasses
 import enum
 import typing
 
+import bs4
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
@@ -95,19 +96,22 @@ def process_notated(ele: Tag):
 def tokenize(lyric: Tag) -> typing.Iterator[Token]:
     newline = NewLineToken()
     for i, ele in enumerate(lyric):
-        if ele.name == 'span':
-            yield from process_notated(ele)
-        elif ele.name is None:
+        if isinstance(ele, bs4.NavigableString):
             # text
             t = ele.text.strip()
             if not t:
                 continue
             yield TextToken(t)
-        elif ele.name == 'br':
-            # newline
-            yield newline
+        elif isinstance(ele, bs4.Tag):
+            if ele.name == 'span':
+                yield from process_notated(ele)
+            elif ele.name == 'br':
+                # newline
+                yield newline
+            else:
+                print(f'** Ignore HTML element <unknown block {ele.name}>', file=sys.stderr)
         else:
-            print(f'<unknown block {ele.name}>')
+            print(f'** Ignore {type(ele)}', file=sys.stderr)
 
 
 class LatexGenerator:
@@ -184,6 +188,8 @@ def main():
         html = sys.stdin.read()
     p = BeautifulSoup(html, "html5lib")
     lyric = p.select_one('.hiragana')
+    if not lyric:
+        raise RuntimeError('Cannot find lyric element `.hiragana`')
     tokens = tokenize(lyric)
     tokens = optimize_typography(tokens)
     gen = LatexGenerator()
