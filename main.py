@@ -171,21 +171,7 @@ class LatexGenerator:
         return doc
 
 
-def main():
-    if len(sys.argv) > 2:
-        print(f'Usage: <{sys.argv[0]}> [path_to_html_file]')
-        exit(0)
-    if len(sys.argv) == 2:
-        file_name = sys.argv[1]
-        try:
-            with open(file_name, 'r', encoding='utf-8') as f:
-                html = f.read()
-        except FileNotFoundError:
-            print(f'File does not exist: {file_name}')
-            exit(1)
-    else:
-        # read html from STDIN
-        html = sys.stdin.read()
+def html_to_tex(html) -> str:
     p = BeautifulSoup(html, "html5lib")
     lyric = p.select_one('.hiragana')
     if not lyric:
@@ -209,7 +195,25 @@ def main():
     gen.artist, gen.title = artist, title
     # FIXME hardcoded CJK font
     gen.cjk_font_main = 'Noto Serif CJK JP'
-    print(gen.generate_lyric(tokens))
+    return gen.generate_lyric(tokens)
+
+
+def main():
+    if len(sys.argv) > 2:
+        print(f'Usage: <{sys.argv[0]}> [path_to_html_file]')
+        exit(0)
+    if len(sys.argv) == 2:
+        file_name = sys.argv[1]
+        try:
+            with open(file_name, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except FileNotFoundError:
+            print(f'File does not exist: {file_name}')
+            exit(1)
+    else:
+        # read html from STDIN
+        html = sys.stdin.read()
+    print(html_to_tex(html))
 
 
 if __name__ == '__main__':
