@@ -14,6 +14,10 @@ class HtmlCache:
 
     def __init__(self, cache_path: str):
         self._cache_path = os.path.abspath(cache_path)
+        try:
+            os.mkdir(self._cache_path)
+        except FileExistsError:
+            pass
 
     async def get_utaten_tex_source(self, item_id: str) -> main.LyricInfo:
         cache_file_path = os.path.join(self._cache_path, f'{item_id}.html')
