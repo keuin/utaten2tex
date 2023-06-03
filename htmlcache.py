@@ -15,7 +15,7 @@ class HtmlCache:
     def __init__(self, cache_path: str):
         self._cache_path = os.path.abspath(cache_path)
 
-    async def get_utaten_tex_source(self, item_id: str) -> str:
+    async def get_utaten_tex_source(self, item_id: str) -> main.LyricInfo:
         cache_file_path = os.path.join(self._cache_path, f'{item_id}.html')
         if os.path.isfile(cache_file_path):
             async with async_open(cache_file_path, 'r', encoding='utf-8') as f:
@@ -31,4 +31,4 @@ class HtmlCache:
                             await f.write(html)
                     except IOError as e:
                         print(f'Failed to update cache for song `{item_id}`: {e}')
-        return main.html_to_tex(html)
+        return main.html_extract_lyric_info(html)

@@ -21,9 +21,17 @@ html_cache = htmlcache.HtmlCache('html_cache')
 @app.get("/utaten/{item_id}.pdf")
 async def get_utaten_lyric_pdf(item_id: str):
     try:
-        tex = await html_cache.get_utaten_tex_source(item_id)
-        pdf_path = await tex_generator.xelatex(tex)
-        return FileResponse(pdf_path, media_type='application/pdf')
+        lyric_info = await html_cache.get_utaten_tex_source(item_id)
+        pdf_path = await tex_generator.xelatex(lyric_info.tex_source)
+        if lyric_info.title and lyric_info.artist:
+            filename = f'{lyric_info.title} - {lyric_info.artist}.pdf'
+        elif not lyric_info.title and not lyric_info.artist:
+            filename = f'{lyric_info.utaten_id}.pdf'
+        elif lyric_info.title:
+            filename = f'{lyric_info.title} - {lyric_info.utaten_id}.pdf'
+        else:
+            filename = f'{lyric_info.artist} - {lyric_info.utaten_id}.pdf'
+        return FileResponse(pdf_path, media_type='application/pdf', filename=filename)
     except texgen.TexGenerationError as e:
         return Response(content=f'Failed to generate tex file: {e}', status_code=502)
 
@@ -31,8 +39,8 @@ async def get_utaten_lyric_pdf(item_id: str):
 @app.get("/utaten/{item_id}.tex")
 async def get_utaten_lyric_tex(item_id: str):
     try:
-        tex = await html_cache.get_utaten_tex_source(item_id)
-        return Response(content=tex, media_type='application/x-tex')
+        lyric_info = await html_cache.get_utaten_tex_source(item_id)
+        return Response(content=lyric_info.tex_source, media_type='application/x-tex')
     except htmlcache.TexSourceGenerationError as e:
         return Response(content=str(e), status_code=503)
 

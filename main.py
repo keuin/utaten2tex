@@ -171,8 +171,20 @@ class LatexGenerator:
         return doc
 
 
-def html_to_tex(html) -> str:
+@dataclasses.dataclass
+class LyricInfo:
+    utaten_id: str
+    tex_source: str
+    artist: typing.Optional[str]
+    title: typing.Optional[str]
+
+
+def html_extract_lyric_info(html) -> LyricInfo:
     p = BeautifulSoup(html, "html5lib")
+    meta_url_info = p.select_one('meta[property="og:url"]')
+    if not meta_url_info:
+        raise RuntimeError('Cannot parse meta URL info from given HTML')
+    utaten_id = re.findall(r'/lyric/([a-z0-9]+)', str(meta_url_info['content']))[0]
     lyric = p.select_one('.hiragana')
     if not lyric:
         raise RuntimeError('Cannot find lyric element `.hiragana`')
@@ -195,7 +207,12 @@ def html_to_tex(html) -> str:
     gen.artist, gen.title = artist, title
     # FIXME hardcoded CJK font
     gen.cjk_font_main = 'Noto Serif CJK JP'
-    return gen.generate_lyric(tokens)
+    return LyricInfo(
+        utaten_id=utaten_id,
+        tex_source=gen.generate_lyric(tokens),
+        artist=artist,
+        title=title,
+    )
 
 
 def main():
@@ -213,7 +230,7 @@ def main():
     else:
         # read html from STDIN
         html = sys.stdin.read()
-    print(html_to_tex(html))
+    print(html_extract_lyric_info(html).tex_source)
 
 
 if __name__ == '__main__':
