@@ -39,7 +39,7 @@ class TexGenerator:
             return cache_file_path
         with temp_dir(os.path.join(self._temp_path, os.urandom(24).hex())) as workdir:
             job_name = 'texput'
-            tex_file_path = os.path.join(self._temp_path, f'{job_name}.tex')
+            tex_file_path = os.path.join(workdir, f'{job_name}.tex')
             with open(tex_file_path, 'w', encoding='utf-8') as f:
                 f.write(tex_source)
             with subprocess.Popen(
