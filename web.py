@@ -1,7 +1,11 @@
+import asyncio
+import os
 import re
 
+import uvicorn
 from fastapi import FastAPI, Response
 from fastapi.responses import FileResponse
+from uvicorn.loops.auto import auto_loop_setup
 
 import htmlcache
 import texgen
@@ -32,3 +36,28 @@ async def get_utaten_lyric_tex(item_id: str):
         return Response(content=tex, media_type='application/x-tex')
     except htmlcache.TexSourceGenerationError as e:
         return Response(content=str(e), status_code=503)
+
+
+@app.on_event("startup")
+async def startup_event():
+    pass
+
+
+def setup_loop():
+    if os.name == 'nt':
+        # use ProactorEventLoop to support async subprocess on Windows
+        print('Driving event loop with IOCP.')
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    auto_loop_setup()
+
+
+if __name__ == '__main__':
+    setup_loop()
+    uvicorn.run(
+        'web:app',
+        host='127.0.0.1',
+        port=8000,
+        log_level='info',
+        loop='none',  # use custom loop initializer
+    )

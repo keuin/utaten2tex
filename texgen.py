@@ -1,10 +1,11 @@
 import asyncio
+import asyncio.subprocess as subprocess
 import contextlib
 import hashlib
 import os
 import shutil
-import typing
-import subprocess
+
+from aiofile import async_open
 
 
 @contextlib.contextmanager
@@ -40,26 +41,28 @@ class TexGenerator:
         with temp_dir(os.path.join(self._temp_path, os.urandom(24).hex())) as workdir:
             job_name = 'texput'
             tex_file_path = os.path.join(workdir, f'{job_name}.tex')
-            with open(tex_file_path, 'w', encoding='utf-8') as f:
-                f.write(tex_source)
-            with subprocess.Popen(
-                    [
-                        'xelatex',
-                        '-interaction=nonstopmode',
-                        '-halt-on-error',
-                        tex_file_path,
-                    ],
-                    cwd=workdir,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    shell=True,
-            ) as proc:
-                stdout, stderr = proc.communicate(input='', timeout=self._task_timeout)
-                print('STDOUT', stdout)
-                print('STDERR', stderr)
-                if proc.returncode != 0:
-                    raise TexGenerationError(f'xelatex process exited with non-zero code {proc.returncode}')
+            async with async_open(tex_file_path, 'w', encoding='utf-8') as f:
+                await f.write(tex_source)
+            proc = await subprocess.create_subprocess_exec(
+                *[
+                    'xelatex',
+                    '-interaction=nonstopmode',
+                    '-halt-on-error',
+                    tex_file_path,
+                ],
+                cwd=workdir,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=10)
+            except TimeoutError:
+                raise TexGenerationError('xelatex timed out')
+            stdout, stderr = [(await x.read()).decode() for x in (proc.stdout, proc.stderr)]
+            print('STDOUT', stdout)
+            print('STDERR', stderr)
+            if proc.returncode != 0:
+                raise TexGenerationError(f'xelatex process exited with non-zero code {proc.returncode}')
             os.rename(os.path.join(workdir, f'{job_name}.pdf'), cache_file_path)
         return cache_file_path
