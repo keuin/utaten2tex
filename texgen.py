@@ -13,8 +13,7 @@ def temp_dir(path: str):
     try:
         yield path
     finally:
-        # shutil.rmtree(path)
-        pass
+        shutil.rmtree(path)
 
 
 class TexGenerationError(Exception):
@@ -62,6 +61,5 @@ class TexGenerator:
                 print('STDERR', stderr)
                 if proc.returncode != 0:
                     raise TexGenerationError(f'xelatex process exited with non-zero code {proc.returncode}')
-
-        os.rename(os.path.join(workdir, f'{job_name}.pdf'), cache_file_path)
+            os.rename(os.path.join(workdir, f'{job_name}.pdf'), cache_file_path)
         return cache_file_path
