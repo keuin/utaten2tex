@@ -59,9 +59,6 @@ class TexGenerator:
                 await asyncio.wait_for(proc.wait(), timeout=10)
             except TimeoutError:
                 raise TexGenerationError('xelatex timed out')
-            stdout, stderr = [(await x.read()).decode() for x in (proc.stdout, proc.stderr)]
-            print('STDOUT', stdout)
-            print('STDERR', stderr)
             if proc.returncode != 0:
                 raise TexGenerationError(f'xelatex process exited with non-zero code {proc.returncode}')
             os.rename(os.path.join(workdir, f'{job_name}.pdf'), cache_file_path)

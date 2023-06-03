@@ -20,9 +20,7 @@ html_cache = htmlcache.HtmlCache('html_cache')
 @app.get("/utaten/{item_id}.pdf")
 async def get_utaten_lyric_pdf(item_id: str):
     try:
-        print('_get_utaten_tex_source')
         tex = await html_cache.get_utaten_tex_source(item_id)
-        print('xelatex')
         pdf_path = await tex_generator.xelatex(tex)
         return FileResponse(pdf_path, media_type='application/pdf')
     except texgen.TexGenerationError as e:
