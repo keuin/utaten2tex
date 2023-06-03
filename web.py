@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import os
 import re
@@ -51,11 +52,15 @@ def setup_loop():
 
 
 if __name__ == '__main__':
+    p = argparse.ArgumentParser(prog='utaten2tex')
+    p.add_argument('-l', '--host', default='127.0.0.1')
+    p.add_argument('-p', '--port', default='8080')
+    args = p.parse_args()
     setup_loop()
     uvicorn.run(
         'web:app',
-        host='127.0.0.1',
-        port=8000,
+        host=args.host,
+        port=int(args.port),
         log_level='info',
         loop='none',  # use custom loop initializer
     )
