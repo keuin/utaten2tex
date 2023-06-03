@@ -40,13 +40,15 @@ class TexGenerator:
             return cache_file_path
         with temp_dir(os.path.join(self._temp_path, os.urandom(24).hex())) as workdir:
             job_name = 'texput'
+            tex_file_path = os.path.join(self._temp_path, f'{job_name}.tex')
+            with open(tex_file_path, 'w', encoding='utf-8') as f:
+                f.write(tex_source)
             with subprocess.Popen(
                     [
                         'xelatex',
                         '-interaction=nonstopmode',
                         '-halt-on-error',
-                        # this seems not working, as the output file name is always set to default `texput.pdf`
-                        f'-jobname={job_name}',
+                        tex_file_path,
                     ],
                     cwd=workdir,
                     stdin=subprocess.PIPE,
@@ -55,7 +57,7 @@ class TexGenerator:
                     text=True,
                     shell=True,
             ) as proc:
-                stdout, stderr = proc.communicate(input=tex_source, timeout=self._task_timeout)
+                stdout, stderr = proc.communicate(input='', timeout=self._task_timeout)
                 print('STDOUT', stdout)
                 print('STDERR', stderr)
                 if proc.returncode != 0:
