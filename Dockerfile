@@ -20,4 +20,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py .
 
-ENTRYPOINT ["python3", "web.py"]
+ENTRYPOINT ["python3", "app.py"]
