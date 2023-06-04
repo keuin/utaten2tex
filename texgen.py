@@ -3,6 +3,7 @@ import asyncio.subprocess as subprocess
 import contextlib
 import hashlib
 import os
+import shlex
 import shutil
 
 from aiofile import async_open
@@ -61,5 +62,9 @@ class TexGenerator:
                 raise TexGenerationError('xelatex timed out')
             if proc.returncode != 0:
                 raise TexGenerationError(f'xelatex process exited with non-zero code {proc.returncode}')
-            os.rename(os.path.join(workdir, f'{job_name}.pdf'), cache_file_path)
+            os.system(' '.join([
+                'mv',
+                shlex.quote(os.path.join(workdir, f'{job_name}.pdf')),
+                shlex.quote(cache_file_path),
+            ]))
         return cache_file_path
